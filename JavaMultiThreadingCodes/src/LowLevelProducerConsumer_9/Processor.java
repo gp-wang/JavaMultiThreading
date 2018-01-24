@@ -1,7 +1,9 @@
 package LowLevelProducerConsumer_9;
 
 import java.util.LinkedList;
-import java.util.Random;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Codes with minor comments are from
@@ -19,41 +21,53 @@ import java.util.Random;
 @SuppressWarnings("InfiniteLoopStatement")
 public class Processor {
 
-    private LinkedList<Integer> list = new LinkedList<>();
+    private LinkedList<Integer> buffer = new LinkedList<>();
     private final int LIMIT = 10;
     private final Object lock = new Object();
 
+    private final List<Integer> list = IntStream.range(0,10000).boxed().collect(Collectors.toList());
+    private int pointer=0;
+
+    public int sum=0;
+
     public void produce() throws InterruptedException {
-        int value = 0;
+
         while (true) {
             synchronized (lock) {
                 //whenever the thread is notified starts again from the loop
-                while (list.size() == LIMIT) {
+                while (buffer.size() == LIMIT) {
                     lock.wait();// wait() is also true
                 }
-                list.add(value);
 
-                System.out.println("Producer added: " + value + " queue size is " + list.size());
-                value++;
-                lock.notify();
+                if(pointer>=10000) break;
+
+                Integer value = list.get(pointer++);
+                buffer.add(value);
+
+                System.out.println("Producer added: " + value + " queue size is " + buffer.size());
+
+                lock.notifyAll();
             }
         }
     }
 
     public void consume() throws InterruptedException {
-        Random random = new Random();
+
         while (true) {
             synchronized (lock) {
-                while (list.size() == 0) {
+                while (buffer.size() == 0) {
                     lock.wait();
                 }
 
-                int value = list.removeFirst();
+                if(pointer>=10000) break;
+
+                int value = buffer.remove(0);
                 System.out.print("Removed value by consumer is: " + value);
-                System.out.println(" Now list size is: " + list.size());
-                lock.notify();
+                System.out.println(" Now buffer size is: " + buffer.size());
+                sum+=value;
+                lock.notifyAll();
             }
-            Thread.sleep(random.nextInt(1000)); //force producer fill the queue to LIMIT_SIZE
+
         }
     }
 }

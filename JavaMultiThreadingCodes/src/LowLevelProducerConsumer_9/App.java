@@ -42,8 +42,35 @@ public class App {
             }
         });
 
+        Thread t3 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    processor.produce();
+                } catch (InterruptedException ignored) {}
+            }
+        });
+
+        Thread t4 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    processor.consume();
+                } catch (InterruptedException ignored) {}
+            }
+        });
+
         t1.start();
         t2.start();
+        t3.start();
+        t4.start();
+
+
+        t1.join();
+        t2.join();
+        t3.join();
+        t4.join();
+        System.out.println("Producer finished. sum is " + processor.sum);
 //        t1.join();
 //        t2.join();
 
